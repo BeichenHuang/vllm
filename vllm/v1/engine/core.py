@@ -1042,6 +1042,7 @@ class EngineCore:
 
         if mode == "abort":
             self.scheduler.finish_requests(None, RequestStatus.FINISHED_ABORTED)
+            self.scheduler.drop_retained_exports()
 
         pause_state = PauseState.PAUSED_ALL if mode == "keep" else PauseState.PAUSED_NEW
         self.scheduler.set_pause_state(pause_state)
@@ -2334,6 +2335,10 @@ class EngineCoreProc(EngineCore):
                 None, RequestStatus.FINISHED_ABORTED
             )
             self._send_abort_outputs(aborted_reqs)
+            # The abort row of the pause table: exports kept for a remote
+            # reader are dropped, not waited for (the reader may be paused
+            # or asleep and keep renewing them indefinitely).
+            self.scheduler.drop_retained_exports()
 
         pause_state = PauseState.PAUSED_ALL if mode == "keep" else PauseState.PAUSED_NEW
         self.scheduler.set_pause_state(pause_state)
